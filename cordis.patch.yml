@@ -1,0 +1,28 @@
+# dsh-mobile-auth bundle layer.
+#
+# `publicOrigin` is the address a phone uses to reach this DSH. It lives here
+# rather than in plugin code because only the operator knows which name their
+# reverse proxy serves: Tailscale Serve, for example, publishes
+# `https://<machine>.<tailnet>.ts.net` onto 127.0.0.1:3080, and that exact name
+# is what the QR code must carry.
+#
+# The name is not interchangeable: the launch token binds the resulting cookie
+# to the request authority. A QR code pointing at 127.0.0.1 would mint a cookie
+# for 127.0.0.1, which is useless on a phone. With no `publicOrigin` the card
+# renders an explanation instead of a code.
+#
+# Replace the placeholder below with your own origin, or override this row from
+# your profile's own cordis.patch.yml:
+#
+#   - id: mobile-auth
+#     config:
+#       publicOrigin: 'https://your-host.example.ts.net'
+#
+# The token itself appears in no configuration and in no file: the Host reads it
+# per request through `ctx.connection.authenticatedUrl()`.
+- insert:
+    - id: mobile-auth
+      name: 'dsh-mobile-auth'
+      config:
+        # Placeholder: set this to the name your phone opens.
+        publicOrigin: ''

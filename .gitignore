@@ -1,0 +1,26 @@
+# Peer-Symlinks auf den Harness-Baum. Sie sind maschinenspezifisch — ein
+# Checkout braucht eigene Links auf $DSH_HOME/profiles/node_modules (siehe
+# README, Abschnitt "Install"), niemals committen.
+node_modules/
+
+# Laufzeit- und Debug-Artefakte
+*.log
+*.tmp
+.cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Dieser Plugin-Code enthält kein Geheimnis: das Start-Token wird zur Laufzeit
+# über ctx.connection.authenticatedUrl() gelesen und nirgends gespeichert.
+# Diese Zeilen sind nur ein Sicherheitsnetz, falls jemand einen QR-Code oder
+# eine Token-URL versehentlich hierher kopiert.
+*.credentials.yaml
+credentials*.json
+.env
+.env.*
+*-login.png
+qr*.svg
+qr*.png
