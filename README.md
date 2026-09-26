@@ -1,4 +1,4 @@
-# dsh-mobile-auth
+# dsh-qr-phone-login
 
 A card on the **Plugins** settings page that shows a scannable QR code for
 signing a phone in to this DSH over its public HTTPS origin.
@@ -63,8 +63,8 @@ lifetime (`cookieMaxAgeDays`, 30 days by default).
 1. Link the package into a profile and add it to that profile's bundles:
 
    ```json
-   "dependencies": { "dsh-mobile-auth": "link:/path/to/dsh-mobile-auth" },
-   "dsh": { "profile": { "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-mobile-auth"] } }
+   "dependencies": { "dsh-qr-phone-login": "link:/path/to/dsh-qr-phone-login" },
+   "dsh": { "profile": { "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-qr-phone-login"] } }
    ```
 
 2. Give the package's `node_modules/@deepseek-ai` the peers its host half
@@ -78,6 +78,14 @@ lifetime (`cookieMaxAgeDays`, 30 days by default).
 4. Restart the Web app once, so the host half installs the settings namespace and
    the route. The card then lives under Settings → Plugins → Plugin
    configuration.
+
+## Compatibility
+
+The package-facing identity is `dsh-qr-phone-login`. The runtime Cordis plugin id,
+settings namespace, and API route remain `mobile-auth` and `/api/mobile-auth/info`
+so existing profile patch overrides and deployed clients continue to work. These
+technical ids are retained deliberately; only the package, loader, CSS marker, and
+installation-facing names changed.
 
 ## Known Limitations and Deferred Work
 

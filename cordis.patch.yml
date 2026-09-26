@@ -1,4 +1,4 @@
-# dsh-mobile-auth bundle layer.
+# dsh-qr-phone-login bundle layer.
 #
 # `publicOrigin` is the address a phone uses to reach this DSH. It lives here
 # rather than in plugin code because only the operator knows which name their
@@ -22,7 +22,8 @@
 # per request through `ctx.connection.authenticatedUrl()`.
 - insert:
     - id: mobile-auth
-      name: 'dsh-mobile-auth'
+      # Keep the runtime plugin id for settings/route compatibility; this is the package-facing name.
+      name: 'dsh-qr-phone-login'
       config:
         # Placeholder: set this to the name your phone opens.
         publicOrigin: ''

@@ -1,8 +1,8 @@
 {
-  "name": "dsh-mobile-auth",
+  "name": "dsh-qr-phone-login",
   "version": "0.1.0",
   "private": true,
-  "description": "DeepSeek Harness plugin: a Plugins-settings card that shows a scannable QR code for signing a phone in to this DSH over its public HTTPS origin",
+  "description": "DeepSeek Harness QR phone login plugin: a Plugins-settings card that shows a scannable QR code for signing a phone in to this DSH over its public HTTPS origin",
   "type": "module",
   "license": "MIT",
   "main": "lib/index.js",
@@ -45,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yoggu/dsh-mobile-auth.git"
+    "url": "git+https://github.com/yoggu/dsh-qr-phone-login.git"
   },
   "keywords": [
     "deepseek-harness",

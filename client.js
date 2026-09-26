@@ -1,5 +1,5 @@
 /**
- * Browser half of `dsh-mobile-auth`: the "DSH Mobile Authentication" card on
+ * Browser half of `dsh-qr-phone-login`: the "DSH QR Phone Login" card on
  * the Plugins settings page.
  *
  * Hand-written in the `window.__ModuleLoader__.load` format — no JSX and no
@@ -17,11 +17,11 @@
  * so nothing here stores, logs, or re-serves the credential. The summary
  * request returns only the origin and a boolean.
  *
- * @module dsh-mobile-auth/client
+ * @module dsh-qr-phone-login/client
  */
 
 window.__ModuleLoader__.load({
-  id: 'dsh-mobile-auth',
+  id: 'dsh-qr-phone-login',
   factory: (require) => {
     const module = { exports: {} }
     const exports = module.exports
@@ -36,7 +36,7 @@ window.__ModuleLoader__.load({
     const { IconChevronDownOutline14 } = require('@deepseek-ai/dsh-client-ui-primitives')
 
     /** This bundle's id, used as the marker on its injected style tag. */
-    const CSS_TAG = 'dsh-mobile-auth'
+    const CSS_TAG = 'dsh-qr-phone-login'
     /** Route the Host half registers on the browser carrier. */
     const ENDPOINT = '/api/mobile-auth/info'
 
@@ -95,7 +95,7 @@ window.__ModuleLoader__.load({
     }
 
     /** Render one card. */
-    function MobileAuthCard() {
+    function QrPhoneLoginCard() {
       const [summary, setSummary] = useState(null)
       const [error, setError] = useState(null)
       const [reloadKey, setReloadKey] = useState(0)
@@ -130,7 +130,7 @@ window.__ModuleLoader__.load({
             onClick: () => { setOpen(value => !value) },
           },
             h('span', { className: 'mobileAuthHeadText' },
-              h('h3', { className: 'mobileAuthName' }, 'DSH Mobile Authentication'),
+              h('h3', { className: 'mobileAuthName' }, 'DSH QR Phone Login'),
               h('p', { className: 'mobileAuthMeta' }, 'QR-Code zur Anmeldung eines Telefons'),
             ),
             h('span', { className: 'mobileAuthHeadRight' },
@@ -186,7 +186,7 @@ window.__ModuleLoader__.load({
       ctx.slots.inject('settings.plugin.item', () => ctx.slots.register({
         name: 'settings.plugin.item',
         key: 'mobile-auth',
-      }, MobileAuthCard))
+      }, QrPhoneLoginCard))
     }
 
     exports.inject = ['slots']
