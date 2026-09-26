@@ -1,6 +1,6 @@
 {
   "name": "dsh-qr-phone-login",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Show a secure QR code to sign a phone into this DSH",
   "icon": "./icon.svg",
