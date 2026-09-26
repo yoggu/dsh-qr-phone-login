@@ -46,7 +46,7 @@ and drops that image into the page, so no component state, prop, or client-side
 extension holds the credential. The JSON summary returns the origin and a
 boolean only.
 
-The token is regenerated on every DSH restart, so use **Neu laden** after
+The token is regenerated on every DSH restart, so use **Reload** after
 restarting the service. Cookies already issued stay valid for their configured
 lifetime (`cookieMaxAgeDays`, 30 days by default).
 
