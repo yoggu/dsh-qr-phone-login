@@ -7,6 +7,9 @@
   "type": "module",
   "license": "MIT",
   "main": "lib/index.js",
+  "scripts": {
+    "test": "node --test lib/*.test.js"
+  },
   "exports": {
     ".": {
       "default": "./lib/index.js"
