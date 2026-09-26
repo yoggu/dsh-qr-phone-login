@@ -14,16 +14,15 @@
 # Replace the placeholder below with your own origin, or override this row from
 # your profile's own cordis.patch.yml:
 #
-#   - id: mobile-auth
+#   - id: qr-phone-login
 #     config:
 #       publicOrigin: 'https://your-host.example.ts.net'
 #
 # The token itself appears in no configuration and in no file: the Host reads it
 # per request through `ctx.connection.authenticatedUrl()`.
 - insert:
-    - id: mobile-auth
-      # Keep the runtime plugin id for settings/route compatibility; this is the package-facing name.
-      name: 'dsh-qr-phone-login'
+    - id: qr-phone-login
+      name: 'qr-phone-login'
       config:
         # Placeholder: set this to the name your phone opens.
         publicOrigin: ''

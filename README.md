@@ -12,7 +12,7 @@ it does for the URL `dsh web` prints at startup.
 
 The card appears under **Settings → Plugins → Plugin configuration**. It reads
 the deployment summary and the rendered code from the Host over
-`/api/mobile-auth/info`, which sits behind the same Host/Origin fence and browser
+`/api/qr-phone-login/info`, which sits behind the same Host/Origin fence and browser
 authentication as every other `/api` route: an unauthenticated caller cannot use
 it to obtain a launch token.
 
@@ -26,7 +26,7 @@ The bundle ships an **empty placeholder** because the name belongs to the
 deployment, not to the plugin. Set it in your profile's own patch layer:
 
 ```yaml
-- id: mobile-auth
+- id: qr-phone-login
   config:
     publicOrigin: 'https://my-host.example.ts.net'
 ```
@@ -78,14 +78,6 @@ lifetime (`cookieMaxAgeDays`, 30 days by default).
 4. Restart the Web app once, so the host half installs the settings namespace and
    the route. The card then lives under Settings → Plugins → Plugin
    configuration.
-
-## Compatibility
-
-The package-facing identity is `dsh-qr-phone-login`. The runtime Cordis plugin id,
-settings namespace, and API route remain `mobile-auth` and `/api/mobile-auth/info`
-so existing profile patch overrides and deployed clients continue to work. These
-technical ids are retained deliberately; only the package, loader, CSS marker, and
-installation-facing names changed.
 
 ## Known Limitations and Deferred Work
 
