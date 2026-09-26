@@ -22,7 +22,7 @@
 # per request through `ctx.connection.authenticatedUrl()`.
 - insert:
     - id: qr-phone-login
-      name: 'qr-phone-login'
+      name: 'dsh-qr-phone-login'
       config:
         # Placeholder: set this to the name your phone opens.
         publicOrigin: ''

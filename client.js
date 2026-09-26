@@ -7,10 +7,8 @@
  * manifest in package.json, which is how the Host discovers and serves a
  * browser bundle.
  *
- * The card is registered into the keyed slot `settings.plugin.item` under the
- * settings namespace this package's Host half serves. The Plugins page
- * dispatches that slot by the namespaces the Host actually serves, so the card
- * appears exactly when the Host half is composed and disappears with it.
+ * The QR page is registered into `plugins.bundle.config` under this package's
+ * bundle name and appears while its Host settings namespace is served.
  *
  * The token is never a value in this module. The card asks the Host for a
  * rendered SVG of the finished login URL and drops that image into the page,
@@ -33,18 +31,40 @@ window.__ModuleLoader__.load({
     // Dasselbe Chevron wie die übrigen Plugin-Karten. `ui-primitives` gehört
     // zum Client-Baseline, wird also vom Shell bereitgestellt und nicht in
     // dieses Bundle kopiert.
-    const { IconChevronDownOutline14 } = require('@deepseek-ai/dsh-client-ui-primitives')
+    const { IconChevronDownOutlineRegular } = require('@deepseek-ai/dsh-client-ui-primitives')
 
     /** This bundle's id, used as the marker on its injected style tag. */
     const CSS_TAG = 'dsh-qr-phone-login'
     /** Route the Host half registers on the browser carrier. */
     const QR_PHONE_LOGIN_ENDPOINT = '/api/qr-phone-login/info'
+    const NS = 'qr-phone-login'
+    const BUNDLE_NAME = 'dsh-qr-phone-login'
+
+    /** Accept a host or an HTTPS origin, never a path or credential-bearing URL. */
+    function parsePublicOrigin(value) {
+      const trimmed = typeof value === 'string' ? value.trim() : ''
+      if (trimmed === '') return { value: '', error: '' }
+      if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed) && !/^https:\/\//i.test(trimmed)) {
+        return { value: '', error: 'Der öffentliche Ursprung muss HTTPS verwenden.' }
+      }
+      let url
+      try {
+        url = new URL(/^https:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`)
+      } catch {
+        return { value: '', error: 'Bitte einen gültigen Hostnamen oder HTTPS-Ursprung eingeben.' }
+      }
+      if (url.protocol !== 'https:' || url.username !== '' || url.password !== ''
+        || url.pathname !== '/' || url.search !== '' || url.hash !== '') {
+        return { value: '', error: 'Nur ein HTTPS-Ursprung ohne Pfad, Zugangsdaten oder Parameter ist zulässig.' }
+      }
+      return { value: url.origin, error: '' }
+    }
 
     // Farben und Flächen kommen ausschließlich aus den Theme-Tokens des
     // Harness (`--dsw-alias-*`); eigene Hex-Werte wären im jeweils anderen
     // Theme unlesbar.
     const CSS = `
-      .qrPhoneLogin{color:var(--dsw-alias-label-primary)}
+      .qrPhoneLogin{display:flex;flex-direction:column;gap:16px;color:var(--dsw-alias-label-primary)}
       .qrPhoneLoginCard{border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-3);border-radius:16px;overflow:hidden;transition:border-color .16s,background .16s}
       .qrPhoneLoginCardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}
       .qrPhoneLoginHead{appearance:none;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:12px;align-items:center;gap:12px;padding:14px 16px;display:flex}
@@ -70,6 +90,11 @@ window.__ModuleLoader__.load({
       .qrPhoneLoginNote{margin:16px 0 0;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;padding:11px 13px;color:var(--dsw-alias-label-secondary);font-size:12.5px;line-height:1.7;overflow-wrap:anywhere}
       .qrPhoneLoginWarn{margin:0 0 18px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:11px 13px;color:var(--dsw-alias-label-secondary);font-size:12.5px;line-height:1.7;overflow-wrap:anywhere}
       .qrPhoneLoginError{margin:0 0 14px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;padding:11px 13px;color:var(--dsw-alias-label-error);font-size:12.5px;line-height:1.7;overflow-wrap:anywhere}
+      .qrPhoneLoginConfig{margin-top:14px;padding:14px 16px;border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-3);border-radius:16px}
+      .qrPhoneLoginConfig label{display:block;margin-bottom:7px;font-size:13px;font-weight:500}
+      .qrPhoneLoginConfig input{box-sizing:border-box;width:100%;height:36px;border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 10px;font:inherit;font-size:13px}
+      .qrPhoneLoginConfig p{margin:8px 0 0;color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:1.6}
+      .qrPhoneLoginConfig .qrPhoneLoginActions{margin-top:12px}
     `
 
     if (
@@ -94,13 +119,23 @@ window.__ModuleLoader__.load({
       return response.json()
     }
 
-    /** Render one card. */
-    function QrPhoneLoginCard() {
+    /** Render the bundle's configuration page, with a token-safe origin editor. */
+    function QrPhoneLoginCard(props) {
+      const [draft, setDraft] = useState(undefined)
+      const [saving, setSaving] = useState(false)
+      const [saveError, setSaveError] = useState('')
+      const [saved, setSaved] = useState(false)
+      const [reloadKey, setReloadKey] = useState(0)
       const [summary, setSummary] = useState(null)
       const [error, setError] = useState(null)
-      const [reloadKey, setReloadKey] = useState(0)
-      // Wie bei den übrigen Plugin-Karten startet die Karte zugeklappt.
-      const [open, setOpen] = useState(false)
+      const form = props.api.form
+      const [state, setState] = useState(() => form.getSnapshot())
+      const origin = typeof state.value?.publicOrigin === 'string' ? state.value.publicOrigin : ''
+      const currentDraft = draft ?? origin
+      const parsedOrigin = parsePublicOrigin(currentDraft)
+      const dirty = draft !== undefined && draft !== origin
+
+      useEffect(() => form.subscribe(() => { setState(form.getSnapshot()) }), [form])
 
       useEffect(() => {
         let cancelled = false
@@ -111,7 +146,30 @@ window.__ModuleLoader__.load({
         return () => { cancelled = true }
       }, [reloadKey])
 
+      async function saveOrigin() {
+        if (!dirty || parsedOrigin.error || !state.writable || saving) return
+        setSaving(true)
+        setSaveError('')
+        setSaved(false)
+        try {
+          const accepted = await form.mutate(
+            parsedOrigin.value === ''
+              ? [{ op: 'unset', path: ['publicOrigin'] }]
+              : [{ op: 'set', path: ['publicOrigin'], value: parsedOrigin.value }],
+            state.revision,
+          )
+          if (!accepted) setSaveError('Der Host hat die Änderung nicht übernommen.')
+          else { setDraft(undefined); setSaved(true); setReloadKey(key => key + 1) }
+        } catch {
+          setSaveError('Speichern fehlgeschlagen. Bitte erneut versuchen.')
+        } finally {
+          setSaving(false)
+        }
+      }
       const refresh = useCallback(() => { setReloadKey(key => key + 1) }, [])
+      // The sign-in QR is the primary purpose of this page, so show it as soon
+      // as the page opens rather than hiding it behind an extra click.
+      const [open, setOpen] = useState(true)
       const configured = summary?.configured === true
 
       // Der QR-Code wird als SVG vom Host geliefert. `reloadKey` wandert in die
@@ -119,6 +177,37 @@ window.__ModuleLoader__.load({
       const qrSrc = configured ? `${QR_PHONE_LOGIN_ENDPOINT}?qr=1&r=${String(reloadKey)}` : null
 
       return h('div', { className: 'qrPhoneLogin' },
+        h('section', { className: 'qrPhoneLoginConfig' },
+          h('label', { htmlFor: 'qr-phone-public-origin' }, 'Öffentlicher Ursprung (HTTPS)'),
+          h('input', {
+            id: 'qr-phone-public-origin',
+            type: 'url',
+            autoComplete: 'url',
+            placeholder: 'https://host.example.ts.net',
+            disabled: !state.writable || saving,
+            value: currentDraft,
+            onChange: (event) => { setDraft(event.target.value); setSaved(false); setSaveError('') },
+          }),
+          h('p', null, 'Host oder HTTPS-Ursprung ohne Pfad. Der QR-Code bleibt deaktiviert, wenn dieses Feld leer ist.'),
+          parsedOrigin.error ? h('p', { className: 'qrPhoneLoginError', role: 'alert' }, parsedOrigin.error) : null,
+          saveError ? h('p', { className: 'qrPhoneLoginError', role: 'alert' }, saveError) : null,
+          saved ? h('p', { role: 'status' }, 'Gespeichert.') : null,
+          h('div', { className: 'qrPhoneLoginActions' },
+            h('button', {
+              type: 'button',
+              className: 'qrPhoneLoginButton primary',
+              disabled: !dirty || Boolean(parsedOrigin.error) || !state.writable || saving,
+              onClick: () => { void saveOrigin() },
+            }, saving ? 'Speichert …' : 'Speichern'),
+            h('button', {
+              type: 'button',
+              className: 'qrPhoneLoginButton',
+              disabled: !dirty || saving,
+              onClick: () => { setDraft(undefined); setSaveError(''); setSaved(false) },
+            }, 'Verwerfen'),
+          ),
+          !state.writable ? h('p', null, 'Die Host-Konfiguration ist schreibgeschützt.') : null,
+        ),
         // Eine einzige Karte, wie die übrigen Plugin-Karten: der Kopf trägt den
         // Namen und eine kurze Beschreibung, der Körper darunter erscheint nur
         // im offenen Zustand und enthält QR-Code, Schritte und Hinweis.
@@ -134,7 +223,7 @@ window.__ModuleLoader__.load({
               h('p', { className: 'qrPhoneLoginMeta' }, 'QR-Code zur Anmeldung eines Telefons'),
             ),
             h('span', { className: 'qrPhoneLoginHeadRight' },
-              h(IconChevronDownOutline14, {
+              h(IconChevronDownOutlineRegular, {
                 className: open ? 'qrPhoneLoginChevron qrPhoneLoginChevronOpen' : 'qrPhoneLoginChevron',
               }),
             ),
@@ -183,13 +272,20 @@ window.__ModuleLoader__.load({
      * @param ctx - the browser plugin context.
      */
     function apply(ctx) {
-      ctx.slots.inject('settings.plugin.item', () => ctx.slots.register({
-        name: 'settings.plugin.item',
-        key: 'qr-phone-login',
-      }, QrPhoneLoginCard))
+      const api = {
+        form: ctx.configForms.get(NS),
+      }
+      ctx.effect(
+        () => ctx.configForms.whileServed([NS], () => ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
+          name: 'plugins.bundle.config',
+          key: BUNDLE_NAME,
+          inject: () => ({ api }),
+        }, QrPhoneLoginCard))),
+        'dsh-qr-phone-login: bundle configuration',
+      )
     }
 
-    exports.inject = ['slots']
+    exports.inject = ['slots', 'configForms']
     exports.apply = apply
     return module.exports
   },

@@ -2,7 +2,8 @@
   "name": "dsh-qr-phone-login",
   "version": "0.1.0",
   "private": true,
-  "description": "DeepSeek Harness QR phone login plugin: a Plugins-settings card that shows a scannable QR code for signing a phone in to this DSH over its public HTTPS origin",
+  "description": "Show a secure QR code to sign a phone into this DSH",
+  "icon": "./icon.svg",
   "type": "module",
   "license": "MIT",
   "main": "lib/index.js",
@@ -11,10 +12,13 @@
       "default": "./lib/index.js"
     },
     "./client": "./client.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
   "files": [
     "lib",
+    "icon.svg",
+    "locale",
     "client.js",
     "cordis.patch.yml",
     "README.md",

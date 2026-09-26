@@ -1,7 +1,7 @@
 # dsh-qr-phone-login
 
-A card on the **Plugins** settings page that shows a scannable QR code for
-signing a phone in to this DSH over its public HTTPS origin.
+A **Plugins → QR phone login** bundle page that lets you set the public HTTPS
+origin and shows a scannable QR code for signing a phone in to this DSH.
 
 ## What it does
 
@@ -10,8 +10,8 @@ launch token, so the page arrives already authenticated. DSH then exchanges the
 token for a signed `HttpOnly` cookie and redirects to the clean root, exactly as
 it does for the URL `dsh web` prints at startup.
 
-The card appears under **Settings → Plugins → Plugin configuration**. It reads
-the deployment summary and the rendered code from the Host over
+The bundle page appears under **Installed → QR phone login** in Plugins. It reads
+the deployment summary and rendered code from the Host over
 `/api/qr-phone-login/info`, which sits behind the same Host/Origin fence and browser
 authentication as every other `/api` route: an unauthenticated caller cannot use
 it to obtain a launch token.
@@ -23,7 +23,8 @@ it to obtain a launch token.
 | `publicOrigin` | The name a phone opens, e.g. `https://my-host.example.ts.net`. Required for the QR code. |
 
 The bundle ships an **empty placeholder** because the name belongs to the
-deployment, not to the plugin. Set it in your profile's own patch layer:
+deployment, not to the plugin. Set it on the bundle's Plugins detail page, or
+configure/override it in your profile's own patch layer:
 
 ```yaml
 - id: qr-phone-login
@@ -73,11 +74,11 @@ lifetime (`cookieMaxAgeDays`, 30 days by default).
    the installation closure; the profile's `$DSH_HOME/profiles/node_modules` is
    the right link target.
 
-3. Set `publicOrigin` in the profile patch layer (see Configuration above).
+3. Set `publicOrigin` on the QR phone login detail page in Plugins, or in the
+   profile patch layer (see Configuration above).
 
-4. Restart the Web app once, so the host half installs the settings namespace and
-   the route. The card then lives under Settings → Plugins → Plugin
-   configuration.
+4. Restart the Web app once, so the Host half installs the settings namespace
+   and route. The QR phone login page then appears under Installed in Plugins.
 
 ## Known Limitations and Deferred Work
 
