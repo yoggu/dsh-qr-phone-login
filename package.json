@@ -1,6 +1,6 @@
 {
   "name": "dsh-qr-phone-login",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Show a secure QR code to sign a phone into this DSH",
   "icon": "./icon.svg",
@@ -40,7 +40,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
-    "@deepseek-ai/dsh-client-connection": "^0.1.5-rc.2"
+    "@deepseek-ai/dsh-client-connection": "^0.1.5-rc.2 || ^0.2.0-rc.1"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-client-connection": {
@@ -48,7 +48,8 @@
     }
   },
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.19.0",
+    "dsh": "^0.1.5-rc.2 || ^0.2.0-rc.1"
   },
   "repository": {
     "type": "git",
