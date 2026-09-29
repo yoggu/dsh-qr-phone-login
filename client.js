@@ -28,9 +28,8 @@ window.__ModuleLoader__.load({
     const React = require('react')
     const h = React.createElement
     const { useCallback, useEffect, useState } = React
-    // Dasselbe Chevron wie die übrigen Plugin-Karten. `ui-primitives` gehört
-    // zum Client-Baseline, wird also vom Shell bereitgestellt und nicht in
-    // dieses Bundle kopiert.
+    // Reuse the chevron from the other plugin cards. The shell provides
+    // `ui-primitives` as part of the client baseline; do not bundle a copy.
     const { IconChevronDownOutlineRegular } = require('@deepseek-ai/dsh-client-ui-primitives')
 
     /** This bundle's id, used as the marker on its injected style tag. */
@@ -41,29 +40,27 @@ window.__ModuleLoader__.load({
     const BUNDLE_NAME = 'dsh-qr-phone-login'
 
     /** Accept a host or an HTTPS origin, never a path or credential-bearing URL. */
-    const english = (_de, en) => en
-    function parsePublicOrigin(value, t = english) {
+    function parsePublicOrigin(value) {
       const trimmed = typeof value === 'string' ? value.trim() : ''
       if (trimmed === '') return { value: '', error: '' }
       if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed) && !/^https:\/\//i.test(trimmed)) {
-        return { value: '', error: t('Der öffentliche Ursprung muss HTTPS verwenden.', 'The public origin must use HTTPS.') }
+        return { value: '', error: 'The public origin must use HTTPS.' }
       }
       let url
       try {
         url = new URL(/^https:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`)
       } catch {
-        return { value: '', error: t('Bitte einen gültigen Hostnamen oder HTTPS-Ursprung eingeben.', 'Enter a valid hostname or HTTPS origin.') }
+        return { value: '', error: 'Enter a valid hostname or HTTPS origin.' }
       }
       if (url.protocol !== 'https:' || url.username !== '' || url.password !== ''
         || url.pathname !== '/' || url.search !== '' || url.hash !== '') {
-        return { value: '', error: t('Nur ein HTTPS-Ursprung ohne Pfad, Zugangsdaten oder Parameter ist zulässig.', 'Only an HTTPS origin without a path, credentials, or parameters is allowed.') }
+        return { value: '', error: 'Only an HTTPS origin without a path, credentials, or parameters is allowed.' }
       }
       return { value: url.origin, error: '' }
     }
 
-    // Farben und Flächen kommen ausschließlich aus den Theme-Tokens des
-    // Harness (`--dsw-alias-*`); eigene Hex-Werte wären im jeweils anderen
-    // Theme unlesbar.
+    // Use Harness theme tokens (`--dsw-alias-*`) for colors and surfaces;
+    // hard-coded colors could be unreadable in the other theme.
     const CSS = `
       .qrPhoneLogin{display:flex;flex-direction:column;gap:16px;color:var(--dsw-alias-label-primary)}
       .qrPhoneLoginCard{border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-3);border-radius:16px;overflow:hidden;transition:border-color .16s,background .16s}
@@ -114,16 +111,15 @@ window.__ModuleLoader__.load({
      *
      * @returns the parsed summary, or a thrown error for the card to show.
      */
-    async function fetchSummary(t) {
+    async function fetchSummary() {
       const response = await fetch(QR_PHONE_LOGIN_ENDPOINT, { headers: { accept: 'application/json' } })
-      if (!response.ok) throw new Error(t(`Host antwortete mit ${String(response.status)}`, `Host responded with ${String(response.status)}`))
+      if (!response.ok) throw new Error(`Host responded with ${String(response.status)}`)
       return response.json()
     }
 
     /** Render the bundle's configuration page, with a token-safe origin editor. */
     function QrPhoneLoginCard(props) {
       const [draft, setDraft] = useState(undefined)
-      const [languageDraft, setLanguageDraft] = useState(undefined)
       const [saving, setSaving] = useState(false)
       const [saveError, setSaveError] = useState('')
       const [saved, setSaved] = useState(false)
@@ -133,23 +129,20 @@ window.__ModuleLoader__.load({
       const form = props.api.form
       const [state, setState] = useState(() => form.getSnapshot())
       const origin = typeof state.value?.publicOrigin === 'string' ? state.value.publicOrigin : ''
-      const language = state.value?.language === 'de' ? 'de' : 'en'
-      const currentLanguage = languageDraft ?? language
-      const t = (de, en) => language === 'de' ? de : en
       const currentDraft = draft ?? origin
-      const parsedOrigin = parsePublicOrigin(currentDraft, t)
-      const dirty = (draft !== undefined && draft !== origin) || (languageDraft !== undefined && languageDraft !== language)
+      const parsedOrigin = parsePublicOrigin(currentDraft)
+      const dirty = draft !== undefined && draft !== origin
 
       useEffect(() => form.subscribe(() => { setState(form.getSnapshot()) }), [form])
 
       useEffect(() => {
         let cancelled = false
         setError(null)
-        fetchSummary(t)
+        fetchSummary()
           .then((value) => { if (!cancelled) setSummary(value) })
           .catch((cause) => { if (!cancelled) setError(cause.message) })
         return () => { cancelled = true }
-      }, [reloadKey, language])
+      }, [reloadKey])
 
       async function saveOrigin() {
         if (!dirty || parsedOrigin.error || !state.writable || saving) return
@@ -162,14 +155,13 @@ window.__ModuleLoader__.load({
               parsedOrigin.value === ''
                 ? { op: 'unset', path: ['publicOrigin'] }
                 : { op: 'set', path: ['publicOrigin'], value: parsedOrigin.value },
-              { op: 'set', path: ['language'], value: currentLanguage },
             ],
             state.revision,
           )
-          if (!accepted) setSaveError(t('Der Host hat die Änderung nicht übernommen.', 'The Host did not accept the change.'))
-          else { setDraft(undefined); setLanguageDraft(undefined); setSaved(true); setReloadKey(key => key + 1) }
+          if (!accepted) setSaveError('The Host did not accept the change.')
+          else { setDraft(undefined); setSaved(true); setReloadKey(key => key + 1) }
         } catch {
-          setSaveError(t('Speichern fehlgeschlagen. Bitte erneut versuchen.', 'Saving failed. Please try again.'))
+          setSaveError('Saving failed. Please try again.')
         } finally {
           setSaving(false)
         }
@@ -180,18 +172,13 @@ window.__ModuleLoader__.load({
       const [open, setOpen] = useState(true)
       const configured = summary?.configured === true
 
-      // Der QR-Code wird als SVG vom Host geliefert. `reloadKey` wandert in die
-      // URL, damit ein Neuladen nach einem DSH-Neustart wirklich neu anfragt.
+      // The Host serves the QR code as an SVG. Include `reloadKey` in its
+      // URL so reloading after a DSH restart requests a fresh image.
       const qrSrc = configured ? `${QR_PHONE_LOGIN_ENDPOINT}?qr=1&r=${String(reloadKey)}` : null
 
       return h('div', { className: 'qrPhoneLogin' },
         h('section', { className: 'qrPhoneLoginConfig' },
-          h('label', { htmlFor: 'qr-phone-language' }, t('Sprache', 'Language')),
-          h('select', {
-            id: 'qr-phone-language', value: currentLanguage, disabled: !state.writable || saving,
-            onChange: event => { setLanguageDraft(event.target.value); setSaved(false); setSaveError('') },
-          }, h('option', { value: 'en' }, 'English'), h('option', { value: 'de' }, 'Deutsch')),
-          h('label', { htmlFor: 'qr-phone-public-origin' }, t('Öffentlicher Ursprung (HTTPS)', 'Public origin (HTTPS)')),
+          h('label', { htmlFor: 'qr-phone-public-origin' }, 'Public origin (HTTPS)'),
           h('input', {
             id: 'qr-phone-public-origin',
             type: 'url',
@@ -201,29 +188,29 @@ window.__ModuleLoader__.load({
             value: currentDraft,
             onChange: (event) => { setDraft(event.target.value); setSaved(false); setSaveError('') },
           }),
-          h('p', null, t('Host oder HTTPS-Ursprung ohne Pfad. Der QR-Code bleibt deaktiviert, wenn dieses Feld leer ist.', 'Hostname or HTTPS origin without a path. The QR code remains disabled when this field is empty.')),
+          h('p', null, 'Hostname or HTTPS origin without a path. The QR code remains disabled when this field is empty.'),
           parsedOrigin.error ? h('p', { className: 'qrPhoneLoginError', role: 'alert' }, parsedOrigin.error) : null,
           saveError ? h('p', { className: 'qrPhoneLoginError', role: 'alert' }, saveError) : null,
-          saved ? h('p', { role: 'status' }, t('Gespeichert.', 'Saved.')) : null,
+          saved ? h('p', { role: 'status' }, 'Saved.') : null,
           h('div', { className: 'qrPhoneLoginActions' },
             h('button', {
               type: 'button',
               className: 'qrPhoneLoginButton primary',
               disabled: !dirty || Boolean(parsedOrigin.error) || !state.writable || saving,
               onClick: () => { void saveOrigin() },
-            }, saving ? t('Speichert …', 'Saving…') : t('Speichern', 'Save')),
+            }, saving ? 'Saving…' : 'Save'),
             h('button', {
               type: 'button',
               className: 'qrPhoneLoginButton',
               disabled: !dirty || saving,
-              onClick: () => { setDraft(undefined); setLanguageDraft(undefined); setSaveError(''); setSaved(false) },
-            }, t('Verwerfen', 'Discard')),
+              onClick: () => { setDraft(undefined); setSaveError(''); setSaved(false) },
+            }, 'Discard'),
           ),
-          !state.writable ? h('p', null, t('Die Host-Konfiguration ist schreibgeschützt.', 'The Host configuration is read-only.')) : null,
+          !state.writable ? h('p', null, 'The Host configuration is read-only.') : null,
         ),
-        // Eine einzige Karte, wie die übrigen Plugin-Karten: der Kopf trägt den
-        // Namen und eine kurze Beschreibung, der Körper darunter erscheint nur
-        // im offenen Zustand und enthält QR-Code, Schritte und Hinweis.
+        // Match the other plugin cards: a name and short description in the
+        // header, with the QR code, instructions, and privacy note shown only
+        // while the card is expanded.
         h('div', { className: open ? 'qrPhoneLoginCard qrPhoneLoginCardOpen' : 'qrPhoneLoginCard' },
           h('button', {
             type: 'button',
@@ -233,7 +220,7 @@ window.__ModuleLoader__.load({
           },
             h('span', { className: 'qrPhoneLoginHeadText' },
               h('h3', { className: 'qrPhoneLoginName' }, 'DSH QR Phone Login'),
-              h('p', { className: 'qrPhoneLoginMeta' }, t('QR-Code zur Anmeldung eines Telefons', 'QR code for signing in a phone')),
+              h('p', { className: 'qrPhoneLoginMeta' }, 'QR code for signing in a phone'),
             ),
             h('span', { className: 'qrPhoneLoginHeadRight' },
               h(IconChevronDownOutlineRegular, {
@@ -243,25 +230,23 @@ window.__ModuleLoader__.load({
           ),
           open ? h('div', { className: 'qrPhoneLoginBody' },
             h('p', { className: 'qrPhoneLoginIntro' },
-              t('Melde ein Telefon in diesem DSH an: QR-Code mit der Kamera scannen, die Seite öffnet sich '
-              + 'bereits authentifiziert. Der Code enthält das Start-Token dieses DSH-Prozesses.',
-                'Sign a phone into this DSH: scan the QR code with the camera to open an authenticated page. '
-                + 'The code contains this DSH process launch token.'),
+              'Sign a phone into this DSH: scan the QR code with the camera to open an authenticated page. '
+                + 'The code contains this DSH process launch token.',
             ),
             error !== null ? h('div', { className: 'qrPhoneLoginError' }, error) : null,
             !configured
               ? h('div', { className: 'qrPhoneLoginWarn' },
-                summary?.message ?? t('Der Host hat die Konfiguration nicht geliefert.', 'The Host did not provide the configuration.'))
+                summary?.message ?? 'The Host did not provide the configuration.')
               : h('div', { className: 'qrPhoneLoginQr' },
                 qrSrc === null
-                  ? h('div', { className: 'qrPhoneLoginPlaceholder' }, t('Kein QR-Code verfügbar', 'No QR code available'))
-                  : h('img', { src: qrSrc, alt: t('QR-Code zur Anmeldung dieses Telefons', 'QR code for signing in this phone'), width: 260, height: 260 }),
+                  ? h('div', { className: 'qrPhoneLoginPlaceholder' }, 'No QR code available')
+                  : h('img', { src: qrSrc, alt: 'QR code for signing in this phone', width: 260, height: 260 }),
               ),
             configured
               ? h('ol', { className: 'qrPhoneLoginSteps' },
-                h('li', null, t('Tailscale auf dem Telefon verbinden und den DNS des Tailscale-Clients verwenden.', 'Connect Tailscale on the phone and use the Tailscale client DNS.')),
-                h('li', null, t('Kamera-App öffnen und diesen QR-Code scannen.', 'Open the camera app and scan this QR code.')),
-                h('li', null, t('Den angebotenen Link öffnen — die Anmeldung läuft automatisch.', 'Open the suggested link — sign-in is automatic.')),
+                h('li', null, 'Connect Tailscale on the phone and use the Tailscale client DNS.'),
+                h('li', null, 'Open the camera app and scan this QR code.'),
+                h('li', null, 'Open the suggested link — sign-in is automatic.'),
               )
               : null,
             h('div', { className: 'qrPhoneLoginActions' },
@@ -269,16 +254,13 @@ window.__ModuleLoader__.load({
                 type: 'button',
                 className: 'qrPhoneLoginButton primary',
                 onClick: refresh,
-              }, t('Neu laden', 'Reload')),
+              }, 'Reload'),
             ),
             h('p', { className: 'qrPhoneLoginNote' },
-              configured ? t(`Ziel: ${summary.origin}. `, `Target: ${summary.origin}. `) : '',
-              t('Das Token gilt für diesen DSH-Prozess und wird bei jedem Neustart neu erzeugt. '
-              + 'Der QR-Code ersetzt es danach durch ein signiertes Cookie im Browser des Telefons. '
-              + 'Behandle den Code wie ein Passwort.',
-                'The token belongs to this DSH process and is regenerated on every restart. '
+              configured ? `Target: ${summary.origin}. ` : '',
+              'The token belongs to this DSH process and is regenerated on every restart. '
                 + 'After sign-in it is replaced by a signed cookie in the phone browser. '
-                + 'Treat the code like a password.'),
+                + 'Treat the code like a password.',
             ),
           ) : null,
         ),

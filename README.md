@@ -27,7 +27,7 @@ To uninstall: `dsh plugin --profile web remove dsh-qr-phone-login`.
 
 ## Language
 
-Settings, accessible image labels, and Host status/error messages default to **English**. Select **Deutsch** in this plugin's language field and save to retain the previous German wording. The `language` setting (`en` or `de`) is plugin-specific, independent of the Harness global UI language; missing or unsupported values fall back to English. It does not change the origin, token, or authentication behavior.
+Settings, instructions, accessible image labels, and Host status/error messages are **English-only**, matching the currently supported Harness language. There is no plugin-specific language selector or setting, and no German or Chinese translations. Previously saved `language` values are ignored; the public origin, token, and authentication behavior are unchanged.
 
 ## Security
 
