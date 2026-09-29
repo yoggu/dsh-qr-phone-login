@@ -4,16 +4,16 @@ Adds a **Plugins → QR phone login** page to DSH Web. A signed-in user can disp
 
 ## Install
 
-Install the latest source from the existing default branch (older tags may not contain English UI support):
+Install the latest tagged GitHub release:
 
 ```sh
-dsh plugin --profile web add 'https://github.com/yoggu/dsh-qr-phone-login.git#main'
+dsh plugin --profile web add 'https://github.com/yoggu/dsh-qr-phone-login.git#v0.1.4'
 ```
 
 Or download the source and link the local checkout:
 
 ```sh
-git clone https://github.com/yoggu/dsh-qr-phone-login.git
+git clone --branch v0.1.4 --depth 1 https://github.com/yoggu/dsh-qr-phone-login.git
 cd dsh-qr-phone-login
 pnpm install
 dsh plugin --profile web add "link:$(pwd)"
